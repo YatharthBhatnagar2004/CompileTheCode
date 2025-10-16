@@ -1,51 +1,57 @@
 const express = require("express");
 const cors = require("cors");
 const axios = require("axios");
-const app = express();
-const port = 5000;
-
-//requiring environment variables
+const mongoose = require("mongoose");
 require("dotenv").config();
 
-const snippets = {};
-let snippetCounter = 1;
+const app = express();
+const port = process.env.PORT || 5000;
 
-app.use(cors());
+// Middleware
+app.use(cors({ origin: true, credentials: true }));
 app.use(express.json());
 
-// Proxy JDoodle API request to avoid CORS
+// MongoDB Connection
+const MONGODB_URI = process.env.MONGODB_URI || "mongodb+srv://yatharth:123qaz123@cluster1.bthk3na.mongodb.net/code-saver-db";
+mongoose
+  .connect(MONGODB_URI, { dbName: "code-saver-db" })
+  .then(() => console.log("MongoDB connected"))
+  .catch((err) => {
+    console.error("MongoDB connection error", err);
+    process.exit(1);
+  });
+
+// Routes
+app.get("/api/health", (_req, res) => res.json({ ok: true }));
+
+// Auth and Code routes
+app.use("/api/auth", require("./routes/auth"));
+app.use("/api/code", require("./routes/code"));
+
+// Optional: keep JDoodle proxy for future use
 app.post("/api/execute", async (req, res) => {
   const { script, language, versionIndex } = req.body;
+  const clientId = process.env.JDOODLE_CLIENT_ID;
+  const clientSecret = process.env.JDOODLE_CLIENT_SECRET;
+  if (!clientId || !clientSecret) {
+    return res.status(501).json({
+      error: "Execution not configured",
+      detail: "Missing JDOODLE_CLIENT_ID or JDOODLE_CLIENT_SECRET in backend .env",
+    });
+  }
   try {
     const response = await axios.post("https://api.jdoodle.com/v1/execute", {
-      clientId: process.env.JDOODLE_CLIENT_ID,
-      clientSecret: process.env.JDOODLE_CLIENT_SECRET,
+      clientId,
+      clientSecret,
       script,
       language,
       versionIndex: versionIndex || "0",
     });
     res.json(response.data);
-  } catch (error) { 
-    res.status(500).json({ error: "Failed to execute code" });
-  }
-});
-
-// Save a code snippet
-app.post("/api/snippets", (req, res) => {
-  const { code, language } = req.body;
-  const id = snippetCounter++;
-  snippets[id] = { code, language };
-  res.json({ id });
-});
-
-// Load a code snippet by ID
-app.get("/api/snippets/:id", (req, res) => {
-  const id = parseInt(req.params.id);
-  const snippet = snippets[id];
-  if (snippet) {
-    res.json(snippet);
-  } else {
-    res.status(404).json({ error: "Snippet not found" });
+  } catch (error) {
+    const status = error?.response?.status || 500;
+    const data = error?.response?.data || {};
+    res.status(status).json({ error: "Failed to execute code", provider: data });
   }
 });
 

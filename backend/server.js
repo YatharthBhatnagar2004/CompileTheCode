@@ -8,7 +8,8 @@ const app = express();
 const port = process.env.PORT || 5000;
 
 // Middleware
-app.use(cors({ origin: true, credentials: true }));
+const allowedOrigin = process.env.FRONTEND_URL || true; // set to specific URL in production
+app.use(cors({ origin: allowedOrigin, credentials: true }));
 app.use(express.json());
 
 // MongoDB Connection

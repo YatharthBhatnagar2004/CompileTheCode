@@ -5,14 +5,18 @@ const User = require("../models/User");
 // POST /api/auth/register
 router.post("/register", async (req, res) => {
   try {
-    const { email, password } = req.body;
-    if (!email || !password) return res.status(400).json({ error: "Email and password required" });
+    const { username, email, password } = req.body;
+    if (!username || !email || !password)
+      return res.status(400).json({ error: "Username, email and password required" });
 
-    const existing = await User.findOne({ email });
-    if (existing) return res.status(409).json({ error: "User already exists" });
+    const existingEmail = await User.findOne({ email });
+    if (existingEmail) return res.status(409).json({ error: "Email already in use" });
 
-    const user = await User.create({ email, password });
-    return res.status(201).json({ id: user._id, email: user.email });
+    const existingUsername = await User.findOne({ username });
+    if (existingUsername) return res.status(409).json({ error: "Username already in use" });
+
+    const user = await User.create({ username, email, password });
+    return res.status(201).json({ id: user._id, username: user.username, email: user.email });
   } catch (err) {
     return res.status(500).json({ error: "Registration failed" });
   }
@@ -30,8 +34,8 @@ router.post("/login", async (req, res) => {
     const valid = await user.comparePassword(password);
     if (!valid) return res.status(401).json({ error: "Invalid credentials" });
 
-    const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET || "dev_secret", { expiresIn: "7d" });
-    return res.json({ token, user: { id: user._id, email: user.email } });
+    const token = jwt.sign({ id: user._id, username: user.username }, process.env.JWT_SECRET || "dev_secret", { expiresIn: "7d" });
+    return res.json({ token, user: { id: user._id, username: user.username, email: user.email } });
   } catch (err) {
     return res.status(500).json({ error: "Login failed" });
   }

@@ -5,7 +5,10 @@ import Register from "./pages/Register";
 import Dashboard from "./pages/Dashboard";
 import MySnippets from "./pages/MySnippets";
 import CodeEditorView from "./pages/CodeEditorView";
+import Landing from "./pages/Landing";
+import CollaborationRoom from "./pages/CollaborationRoom";
 import Navbar from "./components/Navbar";
+import Footer from "./components/Footer";
 
 const isAuthed = () => !!localStorage.getItem("token");
 
@@ -16,11 +19,11 @@ function PrivateRoute({ children }) {
 function App() {
   return (
     <BrowserRouter>
-      <div className="min-h-screen bg-gradient-to-br from-[#0f2027] via-[#203a43] to-[#2c5364] text-white">
+      <div className="min-h-screen aurora-bg" style={{ backgroundColor: 'var(--bg-primary)' }}>
         <Navbar />
         <div className="container mx-auto px-4 py-8">
           <Routes>
-            <Route path="/" element={<Navigate to="/dashboard" replace />} />
+            <Route path="/" element={<Landing />} />
             <Route path="/register" element={<Register />} />
             <Route path="/login" element={<Login />} />
             <Route
@@ -47,8 +50,17 @@ function App() {
                 </PrivateRoute>
               }
             />
+            <Route
+              path="/room/:roomId"
+              element={
+                <PrivateRoute>
+                  <CollaborationRoom />
+                </PrivateRoute>
+              }
+            />
           </Routes>
         </div>
+        <Footer />
       </div>
     </BrowserRouter>
   );

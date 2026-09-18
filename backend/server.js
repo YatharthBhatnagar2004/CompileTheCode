@@ -13,7 +13,7 @@ app.use(cors({ origin: "*", credentials: false }));
 app.use(express.json());
 
 // MongoDB Connection
-const MONGODB_URI = process.env.MONGODB_URI || "mongodb+srv://yatharth:123qaz123@cluster1.bthk3na.mongodb.net/code-saver-db";
+const MONGODB_URI = process.env.MONGODB_URI ";
 mongoose
   .connect(MONGODB_URI, { dbName: "code-saver-db" })
   .then(() => console.log("MongoDB connected"))
